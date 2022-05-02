@@ -466,6 +466,14 @@ func MediaType(img v1.Image, mt types.MediaType) v1.Image {
 	}
 }
 
+// Reference modifies the Reference() of the given image.
+func Reference(img v1.Image, reference *v1.Descriptor) v1.Image {
+	return &image{
+		base:      img,
+		reference: reference,
+	}
+}
+
 // ConfigMediaType modifies the MediaType() of the given image's Config.
 func ConfigMediaType(img v1.Image, mt types.MediaType) v1.Image {
 	return &image{

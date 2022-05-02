@@ -15,101 +15,79 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/google/go-containerregistry/pkg/crane"
-	"github.com/google/go-containerregistry/pkg/logs"
-	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
+	"github.com/google/go-containerregistry/pkg/v1/static"
 	specsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 )
 
+// TODO: make this configurable on the command line
+const (
+	layerContent   = "hello world"
+	layerMediaType = "text/plain"
+)
+
 // NewCmdAttach creates a new cobra.Command for the attach subcommand.
 func NewCmdAttach(options *[]crane.Option) *cobra.Command {
-	var baseRef, newTag, outFile string
-	var newLayers []string
-	var annotate bool
-
-	attachCmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "attach",
-		Short: "Attach contents of a tarball to a remote image",
-		Long: `This sub-command pushes an image based on an (optional)
-base image, with appended layers containing the contents of the
-provided tarballs.
-
-If the base image is a Windows base image (i.e., its config.OS is "windows"),
-the contents of the tarballs will be modified to be suitable for a Windows
-container image.`,
-		Args: cobra.NoArgs,
+		Short: "Attach a text file to an image (via reference)",
+		Long:  "TODO",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
-			var base v1.Image
-			var err error
+			src := args[0]
+			dst := args[1]
 
-			if baseRef == "" {
-				logs.Warn.Printf("base unspecified, using empty image")
-				base = empty.Image
-			} else {
-				base, err = crane.Pull(baseRef, *options...)
-				if err != nil {
-					return fmt.Errorf("pulling %s: %w", baseRef, err)
-				}
-			}
-
-			img, err := crane.Append(base, newLayers...)
+			// Get the existing image manifest
+			// TODO: should we just use the raw manifest?
+			// vs. just grabbing size/digest/mediatype/annotations?
+			orig, err := crane.Pull(src, *options...)
 			if err != nil {
-				return fmt.Errorf("appending %v: %w", newLayers, err)
+				return err
 			}
-
-			if baseRef != "" && annotate {
-				ref, err := name.ParseReference(baseRef)
-				if err != nil {
-					return fmt.Errorf("parsing ref %q: %w", baseRef, err)
-				}
-
-				baseDigest, err := base.Digest()
+			/*
+				TODO: are the annotations new? or copied from manifest
+				manifest, err := orig.Manifest()
 				if err != nil {
 					return err
 				}
-				anns := map[string]string{
-					specsv1.AnnotationBaseImageDigest: baseDigest.String(),
-				}
-				if _, ok := ref.(name.Tag); ok {
-					anns[specsv1.AnnotationBaseImageName] = ref.Name()
-				}
-				img = mutate.Annotations(img, anns).(v1.Image)
+				annotations := manifest.Annotations
+			*/
+			digest, err := orig.Digest()
+			if err != nil {
+				return err
+			}
+			size, err := orig.Size()
+			if err != nil {
+				return err
+			}
+			mediaType, err := orig.MediaType()
+			if err != nil {
+				return err
 			}
 
-			if outFile != "" {
-				if err := crane.Save(img, newTag, outFile); err != nil {
-					return fmt.Errorf("writing output %q: %w", outFile, err)
-				}
-			} else {
-				if err := crane.Push(img, newTag, *options...); err != nil {
-					return fmt.Errorf("pushing image %s: %w", newTag, err)
-				}
-				ref, err := name.ParseReference(newTag)
-				if err != nil {
-					return fmt.Errorf("parsing reference %s: %w", newTag, err)
-				}
-				d, err := img.Digest()
-				if err != nil {
-					return fmt.Errorf("digest: %w", err)
-				}
-				fmt.Println(ref.Context().Digest(d.String()))
+			// Create a new "image" with reference to the existing image
+			base := mutate.MediaType(empty.Image, specsv1.MediaTypeImageManifest)
+			base = mutate.ConfigMediaType(base, specsv1.MediaTypeImageConfig)
+			base = mutate.Reference(base, &v1.Descriptor{
+				MediaType: mediaType,
+				Size:      size,
+				Digest:    digest,
+				//Annotations: annotations,
+			})
+			layer := static.NewLayer([]byte(layerContent), layerMediaType)
+			img, err := mutate.Append(base, mutate.Addendum{
+				Layer: layer,
+			})
+			if err != nil {
+				return err
 			}
-			return nil
+
+			// Push the new "image"
+			return crane.Push(img, dst, *options...)
 		},
 	}
-	attachCmd.Flags().StringVarP(&baseRef, "base", "b", "", "Name of base image to append to")
-	attachCmd.Flags().StringVarP(&newTag, "new_tag", "t", "", "Tag to apply to resulting image")
-	attachCmd.Flags().StringSliceVarP(&newLayers, "new_layer", "f", []string{}, "Path to tarball to append to image")
-	attachCmd.Flags().StringVarP(&outFile, "output", "o", "", "Path to new tarball of resulting image")
-	attachCmd.Flags().BoolVar(&annotate, "set-base-image-annotations", false, "If true, annotate the resulting image as being based on the base image")
-
-	attachCmd.MarkFlagRequired("new_tag")
-	attachCmd.MarkFlagRequired("new_layer")
-	return attachCmd
 }

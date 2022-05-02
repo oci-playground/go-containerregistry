@@ -37,6 +37,7 @@ type image struct {
 	configMediaType *types.MediaType
 	diffIDMap       map[v1.Hash]v1.Layer
 	digestMap       map[v1.Hash]v1.Layer
+	reference       *v1.Descriptor
 }
 
 var _ v1.Image = (*image)(nil)
@@ -152,6 +153,10 @@ func (i *image) compute() error {
 		for k, v := range i.annotations {
 			manifest.Annotations[k] = v
 		}
+	}
+
+	if i.reference != nil {
+		manifest.Reference = *i.reference
 	}
 
 	i.configFile = configFile

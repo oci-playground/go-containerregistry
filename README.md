@@ -7,9 +7,36 @@ To build:
 go build -o cmd/crane/crane ./cmd/crane/
 ```
 
-To run:
+Copy image into registry (`localhost:8080`):
 ```
-cmd/crane/crane attach -h
+cmd/crane/crane copy \
+  ghcr.io/project-zot/zot-linux-amd64:v1.4.1-rc1 \
+  localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1
+```
+
+Attach a "hello world" text file to the image:
+```
+cmd/crane/crane attach \
+  localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1 \
+  localhost:8080/project-zot/zot-linux-amd64:textfile
+```
+
+Check the manifest of the text file "image":
+```
+cmd/crane/crane manifest \
+  localhost:8080/project-zot/zot-linux-amd64:textfile | jq
+```
+
+Verify the digest of the original image:
+```
+cmd/crane/crane manifest \
+  localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1 | shasum -a 256
+```
+
+Verify the size of the original image:
+```
+cmd/crane/crane manifest \
+  localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1 | wc -c
 ```
 
 # go-containerregistry

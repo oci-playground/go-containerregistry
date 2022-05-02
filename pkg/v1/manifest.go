@@ -28,6 +28,7 @@ type Manifest struct {
 	Config        Descriptor        `json:"config"`
 	Layers        []Descriptor      `json:"layers"`
 	Annotations   map[string]string `json:"annotations,omitempty"`
+	Reference     Descriptor        `json:"reference,omitempty"`
 }
 
 // IndexManifest represents an OCI image index in a structured way.
