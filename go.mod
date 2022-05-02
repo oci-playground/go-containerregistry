@@ -44,3 +44,5 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+replace github.com/opencontainers/image-spec => github.com/oci-playground/image-spec v1.0.3-0.20220502203203-687ae397e329
