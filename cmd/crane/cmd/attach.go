@@ -15,11 +15,14 @@
 package cmd
 
 import (
+	"io/ioutil"
+
 	"github.com/google/go-containerregistry/pkg/crane"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/static"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 	specsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 )
@@ -36,10 +39,18 @@ func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 		Use:   "attach",
 		Short: "Attach a text file to an image (via reference)",
 		Long:  "TODO",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(_ *cobra.Command, args []string) error {
-			src := args[0]
-			dst := args[1]
+			fileName := args[0]
+			mediaType := args[1]
+			src := args[2]
+			dst := args[3]
+
+			// Load file
+			layerContent, err := ioutil.ReadFile(fileName)
+			if err != nil {
+				return err
+			}
 
 			// Get the existing image manifest
 			// TODO: should we just use the raw manifest?
@@ -56,15 +67,15 @@ func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 				}
 				annotations := manifest.Annotations
 			*/
-			digest, err := orig.Digest()
+			origDigest, err := orig.Digest()
 			if err != nil {
 				return err
 			}
-			size, err := orig.Size()
+			origSize, err := orig.Size()
 			if err != nil {
 				return err
 			}
-			mediaType, err := orig.MediaType()
+			origMediaType, err := orig.MediaType()
 			if err != nil {
 				return err
 			}
@@ -73,12 +84,13 @@ func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 			base := mutate.MediaType(empty.Image, specsv1.MediaTypeImageManifest)
 			base = mutate.ConfigMediaType(base, specsv1.MediaTypeImageConfig)
 			base = mutate.Reference(base, &v1.Descriptor{
-				MediaType: mediaType,
-				Size:      size,
-				Digest:    digest,
+				MediaType: origMediaType,
+				Size:      origSize,
+				Digest:    origDigest,
 				//Annotations: annotations,
 			})
-			layer := static.NewLayer([]byte(layerContent), layerMediaType)
+
+			layer := static.NewLayer(layerContent, types.MediaType(mediaType))
 			img, err := mutate.Append(base, mutate.Addendum{
 				Layer: layer,
 			})

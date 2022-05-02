@@ -16,7 +16,11 @@ cmd/crane/crane copy \
 
 Attach a "hello world" text file to the image:
 ```
+echo "hello world" > hello.txt
+
 cmd/crane/crane attach \
+  hello.txt \
+  text/plain \
   localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1 \
   localhost:8080/project-zot/zot-linux-amd64:textfile
 ```
