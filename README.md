@@ -1,3 +1,17 @@
+# OCI Playground
+
+[View diff](https://github.com/google/go-containerregistry/compare/main...oci-playground:main)
+
+To build:
+```
+go build -o cmd/crane/crane ./cmd/crane/
+```
+
+To run:
+```
+cmd/crane/crane attach -h
+```
+
 # go-containerregistry
 
 [![GitHub Actions Build Status](https://github.com/google/go-containerregistry/workflows/Build/badge.svg)](https://github.com/google/go-containerregistry/actions?query=workflow%3ABuild)
