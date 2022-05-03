@@ -84,6 +84,12 @@ func Get(ref name.Reference, options ...Option) (*Descriptor, error) {
 	return get(ref, acceptable, options...)
 }
 
+// GetReferences TODO
+func GetReferences(ref name.Reference, options ...Option) (v1.ImageIndex, error) {
+	acceptable := []types.MediaType{types.OCIImageIndex}
+	return getReferences(ref, acceptable, options...)
+}
+
 // Head returns a v1.Descriptor for the given reference by issuing a HEAD
 // request.
 //
@@ -132,6 +138,28 @@ func get(ref name.Reference, acceptable []types.MediaType, options ...Option) (*
 		Descriptor: *desc,
 		platform:   o.platform,
 	}, nil
+}
+
+func getReferences(ref name.Reference, acceptable []types.MediaType, options ...Option) (v1.ImageIndex, error) {
+	o, err := makeOptions(ref.Context(), options...)
+	if err != nil {
+		return nil, err
+	}
+	f, err := makeFetcher(ref, o)
+	if err != nil {
+		return nil, err
+	}
+	b, desc, err := f.fetchReferences(ref, acceptable)
+	if err != nil {
+		return nil, err
+	}
+	d := Descriptor{
+		fetcher:    *f,
+		Manifest:   b,
+		Descriptor: *desc,
+		platform:   o.platform,
+	}
+	return d.ImageIndex()
 }
 
 // Image converts the Descriptor into a v1.Image.
@@ -235,6 +263,70 @@ func (f *fetcher) url(resource, identifier string) url.URL {
 		Host:   f.Ref.Context().RegistryStr(),
 		Path:   fmt.Sprintf("/v2/%s/%s/%s", f.Ref.Context().RepositoryStr(), resource, identifier),
 	}
+}
+
+func (f *fetcher) fetchReferences(ref name.Reference, acceptable []types.MediaType) ([]byte, *v1.Descriptor, error) {
+	u := f.url("references", ref.Identifier())
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	accept := []string{}
+	for _, mt := range acceptable {
+		accept = append(accept, string(mt))
+	}
+	req.Header.Set("Accept", strings.Join(accept, ","))
+
+	resp, err := f.Client.Do(req.WithContext(f.context))
+	if err != nil {
+		return nil, nil, err
+	}
+	defer resp.Body.Close()
+
+	if err := transport.CheckError(resp, http.StatusOK); err != nil {
+		return nil, nil, err
+	}
+
+	manifest, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	digest, size, err := v1.SHA256(bytes.NewReader(manifest))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	mediaType := types.MediaType(resp.Header.Get("Content-Type"))
+	contentDigest, err := v1.NewHash(resp.Header.Get("Docker-Content-Digest"))
+	if err == nil && mediaType == types.DockerManifestSchema1Signed {
+		// If we can parse the digest from the header, and it's a signed schema 1
+		// manifest, let's use that for the digest to appease older registries.
+		digest = contentDigest
+	}
+
+	// Validate the digest matches what we asked for, if pulling by digest.
+	//if dgst, ok := ref.(name.Digest); ok {
+	//	if digest.String() != dgst.DigestStr() {
+	//		return nil, nil, fmt.Errorf("manifest digest: %q does not match requested digest: %q for %q", digest, dgst.DigestStr(), f.Ref)
+	//	}
+	//}
+	// Do nothing for tags; I give up.
+	//
+	// We'd like to validate that the "Docker-Content-Digest" header matches what is returned by the registry,
+	// but so many registries implement this incorrectly that it's not worth checking.
+	//
+	// For reference:
+	// https://github.com/GoogleContainerTools/kaniko/issues/298
+
+	// Return all this info since we have to calculate it anyway.
+	desc := v1.Descriptor{
+		Digest:    digest,
+		Size:      size,
+		MediaType: mediaType,
+	}
+
+	return manifest, &desc, nil
 }
 
 func (f *fetcher) fetchManifest(ref name.Reference, acceptable []types.MediaType) ([]byte, *v1.Descriptor, error) {

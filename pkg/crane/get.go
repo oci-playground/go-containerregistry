@@ -44,6 +44,15 @@ func getManifest(r string, opt ...Option) (*remote.Descriptor, error) {
 	return remote.Get(ref, o.Remote...)
 }
 
+func getReferences(r string, opt ...Option) (v1.ImageIndex, error) {
+	o := makeOptions(opt...)
+	ref, err := name.ParseReference(r, o.Name...)
+	if err != nil {
+		return nil, fmt.Errorf("parsing reference %q: %w", r, err)
+	}
+	return remote.GetReferences(ref, o.Remote...)
+}
+
 // Head performs a HEAD request for a manifest and returns a content descriptor
 // based on the registry's response.
 func Head(r string, opt ...Option) (*v1.Descriptor, error) {
