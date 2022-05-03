@@ -31,22 +31,10 @@ cmd/crane/crane manifest \
   localhost:8080/project-zot/zot-linux-amd64:textfile | jq
 ```
 
-Verify the digest of the original image:
-```
-cmd/crane/crane manifest \
-  localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1 | shasum -a 256
-```
-
-Verify the size of the original image:
-```
-cmd/crane/crane manifest \
-  localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1 | wc -c
-```
-
 Get the references result:
 ```
 cmd/crane/crane refs \
-  localhost:8080/project-zot/zot-linux-amd64@sha256:8fa3419d55371667c03ae484c8d0cbb487f1a2fd19c17e2d1698fb7dc11fa8d2 | jq
+  localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1 | jq
 ```
 
 # go-containerregistry
