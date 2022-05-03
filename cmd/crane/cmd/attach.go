@@ -27,12 +27,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TODO: make this configurable on the command line
-const (
-	layerContent   = "hello world"
-	layerMediaType = "text/plain"
-)
-
 // NewCmdAttach creates a new cobra.Command for the attach subcommand.
 func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 	return &cobra.Command{

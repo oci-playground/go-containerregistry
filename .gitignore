@@ -7,3 +7,5 @@ bazel*
 cmd/crane/crane
 cmd/gcrane/gcrane
 cmd/krane/krane
+
+*.txt
