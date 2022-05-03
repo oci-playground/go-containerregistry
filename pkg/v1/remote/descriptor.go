@@ -149,6 +149,18 @@ func getReferences(ref name.Reference, acceptable []types.MediaType, options ...
 	if err != nil {
 		return nil, err
 	}
+	// If it isnt a digest, first determine it
+	// TODO: better way to do this?
+	if _, err := name.NewDigest(ref.String()); err != nil {
+		mDesc, err := f.headManifest(ref, []types.MediaType{"*"})
+		if err != nil {
+			return nil, err
+		}
+		ref, err = name.ParseReference(ref.Name() + "@" + mDesc.Digest.String())
+		if err != nil {
+			return nil, err
+		}
+	}
 	b, desc, err := f.fetchReferences(ref, acceptable)
 	if err != nil {
 		return nil, err
@@ -298,34 +310,11 @@ func (f *fetcher) fetchReferences(ref name.Reference, acceptable []types.MediaTy
 	}
 
 	mediaType := types.MediaType(resp.Header.Get("Content-Type"))
-	contentDigest, err := v1.NewHash(resp.Header.Get("Docker-Content-Digest"))
-	if err == nil && mediaType == types.DockerManifestSchema1Signed {
-		// If we can parse the digest from the header, and it's a signed schema 1
-		// manifest, let's use that for the digest to appease older registries.
-		digest = contentDigest
-	}
-
-	// Validate the digest matches what we asked for, if pulling by digest.
-	//if dgst, ok := ref.(name.Digest); ok {
-	//	if digest.String() != dgst.DigestStr() {
-	//		return nil, nil, fmt.Errorf("manifest digest: %q does not match requested digest: %q for %q", digest, dgst.DigestStr(), f.Ref)
-	//	}
-	//}
-	// Do nothing for tags; I give up.
-	//
-	// We'd like to validate that the "Docker-Content-Digest" header matches what is returned by the registry,
-	// but so many registries implement this incorrectly that it's not worth checking.
-	//
-	// For reference:
-	// https://github.com/GoogleContainerTools/kaniko/issues/298
-
-	// Return all this info since we have to calculate it anyway.
 	desc := v1.Descriptor{
 		Digest:    digest,
 		Size:      size,
 		MediaType: mediaType,
 	}
-
 	return manifest, &desc, nil
 }
 
