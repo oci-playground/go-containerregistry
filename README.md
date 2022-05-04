@@ -22,13 +22,13 @@ cmd/crane/crane attach \
   hello.txt \
   text/plain \
   localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1 \
-  localhost:8080/project-zot/zot-linux-amd64:textfile
+  localhost:8080/project-zot/zot-linux-amd64
 ```
 
 Check the manifest of the text file "image":
 ```
 cmd/crane/crane manifest \
-  localhost:8080/project-zot/zot-linux-amd64:textfile | jq
+  localhost:8080/project-zot/zot-linux-amd64@sha256:81055a87a63833469923e5afb6964cd79e8c442ab4d8a613d4068 | jq
 ```
 
 Get the references result:
