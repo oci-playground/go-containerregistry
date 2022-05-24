@@ -33,6 +33,6 @@ type Manifest struct {
 	// Annotations contains arbitrary metadata for the image manifest.
 	Annotations map[string]string `json:"annotations,omitempty"`
 
-	// Reference links a manifest to another existing manifest.
-	Reference Descriptor `json:"reference,omitempty"`
+	// Refers links a manifest to another existing manifest.
+	Refers Descriptor `json:"refers,omitempty"`
 }

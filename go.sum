@@ -215,8 +215,8 @@ github.com/moby/term v0.0.0-20210610120745-9d4ed1856297 h1:yH0SvLzcbZxcJXho2yh7C
 github.com/moby/term v0.0.0-20210610120745-9d4ed1856297/go.mod h1:vgPCkQMyxTZ7IDy8SXRufE172gr8+K/JE/7hHFxHW3A=
 github.com/morikuni/aec v1.0.0 h1:nP9CBfwrvYnBRgY6qfDQkygYDmYwOilePFkwzv4dU8A=
 github.com/morikuni/aec v1.0.0/go.mod h1:BbKIizmSmc5MMPqRYbxO4ZU0S0+P200+tUnFx7PXmsc=
-github.com/oci-playground/image-spec v1.0.3-0.20220502203203-687ae397e329 h1:Q4QvrRunDbmQBLH28Bi4SqhtCmwj2tfDivUQuX36xQA=
-github.com/oci-playground/image-spec v1.0.3-0.20220502203203-687ae397e329/go.mod h1:K/JAU0m27RFhDRX4PcFdIKntROP6y5Ed6O91aZYDQfs=
+github.com/oci-playground/image-spec v1.0.3-0.20220524171020-1a83d467956c h1:bVWnxGIaPTu5p6UYL1DjQ/zgNyI52fYiX7UO3xDrafs=
+github.com/oci-playground/image-spec v1.0.3-0.20220524171020-1a83d467956c/go.mod h1:K/JAU0m27RFhDRX4PcFdIKntROP6y5Ed6O91aZYDQfs=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
