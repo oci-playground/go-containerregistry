@@ -277,12 +277,22 @@ func (f *fetcher) url(resource, identifier string) url.URL {
 	}
 }
 
+func (f *fetcher) urlWithQuerystring(resource, k, v string) url.URL {
+	return url.URL{
+		Scheme:   f.Ref.Context().Registry.Scheme(),
+		Host:     f.Ref.Context().RegistryStr(),
+		Path:     fmt.Sprintf("/v2/%s/%s", f.Ref.Context().RepositoryStr(), resource),
+		RawQuery: url.Values{k: []string{v}}.Encode(),
+	}
+}
+
 func (f *fetcher) fetchReferences(ref name.Reference, acceptable []types.MediaType) ([]byte, *v1.Descriptor, error) {
-	u := f.url("references", ref.Identifier())
+	u := f.urlWithQuerystring("_oci/artifacts/referrers", "digest", ref.Identifier())
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, nil, err
 	}
+	req.URL.RawQuery = u.RawQuery
 	accept := []string{}
 	for _, mt := range acceptable {
 		accept = append(accept, string(mt))
