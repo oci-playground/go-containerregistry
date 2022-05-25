@@ -22,8 +22,7 @@ cmd/crane/crane attach \
   hello.txt \
   text/plain \
   misc \
-  localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1 \
-  localhost:8080/project-zot/zot-linux-amd64
+  localhost:8080/project-zot/zot-linux-amd64:v1.4.1-rc1
 ```
 
 Check the manifest of the text file "image":

@@ -15,9 +15,11 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	"github.com/google/go-containerregistry/pkg/crane"
+	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
@@ -33,13 +35,12 @@ func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 		Use:   "attach",
 		Short: "Attach a text file to an image (via reference)",
 		Long:  "TODO",
-		Args:  cobra.ExactArgs(5),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(_ *cobra.Command, args []string) error {
 			fileName := args[0]
 			mediaType := args[1]
 			artifactType := args[2]
 			src := args[3]
-			dst := args[4]
 
 			// Load file
 			layerContent, err := ioutil.ReadFile(fileName)
@@ -95,6 +96,16 @@ func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 				return err
 			}
 
+			dstDigest, err := img.Digest()
+			if err != nil {
+				return err
+			}
+
+			dstRef, err := name.ParseReference(src)
+			if err != nil {
+				return err
+			}
+			dst := fmt.Sprintf("%s@%s", dstRef.Context(), dstDigest.String())
 			// Push the new "image"
 			return crane.Push(img, dst, *options...)
 		},
