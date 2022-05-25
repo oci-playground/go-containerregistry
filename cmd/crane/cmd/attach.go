@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/static"
 	"github.com/google/go-containerregistry/pkg/v1/types"
+	"github.com/opencontainers/go-digest"
 	specsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 )
@@ -49,29 +51,21 @@ func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 			}
 
 			// Get the existing image manifest
-			// TODO: should we just use the raw manifest?
-			// vs. just grabbing size/digest/mediatype/annotations?
-			orig, err := crane.Pull(src, *options...)
+			// TODO: any easier way to do this? crane.Pull() converts the mediatype...
+			orig, err := crane.Manifest(src, *options...)
 			if err != nil {
 				return err
 			}
-			/*
-				TODO: are the annotations new? or copied from manifest
-				manifest, err := orig.Manifest()
-				if err != nil {
-					return err
-				}
-				annotations := manifest.Annotations
-			*/
-			origDigest, err := orig.Digest()
+			var tmp = struct {
+				MediaType types.MediaType `json:"mediaType"`
+			}{}
+			err = json.Unmarshal(orig, &tmp)
 			if err != nil {
 				return err
 			}
-			origSize, err := orig.Size()
-			if err != nil {
-				return err
-			}
-			origMediaType, err := orig.MediaType()
+			origMediaType := tmp.MediaType
+			origSize := int64(len(orig))
+			origDigest, err := v1.NewHash(digest.FromBytes(orig).String())
 			if err != nil {
 				return err
 			}
@@ -80,6 +74,7 @@ func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 			base := mutate.Annotations(empty.Image, map[string]string{
 				"org.opencontainers.artifact.type": artifactType,
 			}).(v1.Image)
+
 			base = mutate.MediaType(base, specsv1.MediaTypeImageManifest)
 			base = mutate.ConfigMediaType(base, specsv1.MediaTypeImageConfig)
 			base = mutate.Reference(base, &v1.Descriptor{
@@ -96,16 +91,17 @@ func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 				return err
 			}
 
+			// TODO: any easier way to push by digest?
 			dstDigest, err := img.Digest()
 			if err != nil {
 				return err
 			}
-
 			dstRef, err := name.ParseReference(src)
 			if err != nil {
 				return err
 			}
 			dst := fmt.Sprintf("%s@%s", dstRef.Context(), dstDigest.String())
+
 			// Push the new "image"
 			return crane.Push(img, dst, *options...)
 		},
