@@ -33,12 +33,13 @@ func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 		Use:   "attach",
 		Short: "Attach a text file to an image (via reference)",
 		Long:  "TODO",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(5),
 		RunE: func(_ *cobra.Command, args []string) error {
 			fileName := args[0]
 			mediaType := args[1]
-			src := args[2]
-			dst := args[3]
+			artifactType := args[2]
+			src := args[3]
+			dst := args[4]
 
 			// Load file
 			layerContent, err := ioutil.ReadFile(fileName)
@@ -75,13 +76,15 @@ func NewCmdAttach(options *[]crane.Option) *cobra.Command {
 			}
 
 			// Create a new "image" with reference to the existing image
-			base := mutate.MediaType(empty.Image, specsv1.MediaTypeImageManifest)
+			base := mutate.Annotations(empty.Image, map[string]string{
+				"org.opencontainers.artifact.type": artifactType,
+			}).(v1.Image)
+			base = mutate.MediaType(base, specsv1.MediaTypeImageManifest)
 			base = mutate.ConfigMediaType(base, specsv1.MediaTypeImageConfig)
 			base = mutate.Reference(base, &v1.Descriptor{
 				MediaType: origMediaType,
 				Size:      origSize,
 				Digest:    origDigest,
-				//Annotations: annotations,
 			})
 
 			layer := static.NewLayer(layerContent, types.MediaType(mediaType))

@@ -152,7 +152,13 @@ func getReferences(ref name.Reference, acceptable []types.MediaType, options ...
 	// If it isnt a digest, first determine it
 	// TODO: better way to do this?
 	if _, err := name.NewDigest(ref.String()); err != nil {
-		mDesc, err := f.headManifest(ref, []types.MediaType{"*"})
+		acceptable := []types.MediaType{
+			types.DockerManifestSchema1,
+			types.DockerManifestSchema1Signed,
+		}
+		acceptable = append(acceptable, acceptableImageMediaTypes...)
+		acceptable = append(acceptable, acceptableIndexMediaTypes...)
+		mDesc, err := f.headManifest(ref, acceptable)
 		if err != nil {
 			return nil, err
 		}
