@@ -20,7 +20,11 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/empty"
+	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/spf13/cobra"
 )
 
@@ -46,20 +50,49 @@ func NewCmdCreateRefIndex(options *[]crane.Option) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			d, err := index.Digest()
+			indexMediatype, err := index.MediaType()
 			if err != nil {
 				return err
 			}
-			refIndexTag := fmt.Sprintf("%s-%s", d.Algorithm, d.Hex)
-
-			fmt.Printf("Ref index tag: %s\n", refIndexTag)
-
-			m, err := index.IndexManifest()
-
-			for i, layer := range m.Manifests {
-				fmt.Printf("[%d] %s %s\n", i, layer.MediaType, layer.Digest)
+			indexDigest, err := index.Digest()
+			if err != nil {
+				return err
 			}
+			indexSize, err := index.Size()
+			if err != nil {
+				return err
+			}
+
+			// Create the new index
+			refIndex := mutate.IndexMediaType(empty.Index, types.OCIImageIndex)
+			refIndex = mutate.AppendManifests(refIndex, mutate.IndexAddendum{
+				Add: empty.Image,
+				Descriptor: v1.Descriptor{
+					MediaType: indexMediatype,
+					Digest:    indexDigest,
+					Size:      indexSize,
+					Annotations: map[string]string{
+						"org.favorite.icecream": "mint-chocolate",
+					},
+				},
+			})
+			indexManifest, err := index.IndexManifest()
+			if err != nil {
+				return err
+			}
+			for _, manifest := range indexManifest.Manifests {
+				refIndex = mutate.AppendManifests(refIndex, mutate.IndexAddendum{
+					Add:        empty.Image,
+					Descriptor: manifest,
+				})
+			}
+
+			raw, err := refIndex.RawManifest()
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(raw))
+
 			return nil
 		},
 	}
