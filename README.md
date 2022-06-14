@@ -1,3 +1,24 @@
+# OCI Playground
+
+[View diff](https://github.com/google/go-containerregistry/compare/main...oci-playground:f)
+
+To build:
+```
+go build -o cmd/crane/crane ./cmd/crane/
+```
+
+Create the "original" image index:
+```
+cmd/crane/crane copy \
+    ghcr.io/distroless/alpine-base:latest-20220614\
+    localhost:5000/alpine:v1
+```
+
+Inspect:
+```
+cmd/crane/crane manifest localhost:5000/alpine:v1 | jq
+```
+
 # go-containerregistry
 
 [![GitHub Actions Build Status](https://github.com/google/go-containerregistry/workflows/Build/badge.svg)](https://github.com/google/go-containerregistry/actions?query=workflow%3ABuild)
