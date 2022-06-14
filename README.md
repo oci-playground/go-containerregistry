@@ -19,6 +19,12 @@ Inspect:
 cmd/crane/crane manifest localhost:5000/alpine:v1 | jq
 ```
 
+Create the reference index:
+
+```
+cmd/crane/crane create-ref-index localhost:5000/alpine:v1
+```
+
 # go-containerregistry
 
 [![GitHub Actions Build Status](https://github.com/google/go-containerregistry/workflows/Build/badge.svg)](https://github.com/google/go-containerregistry/actions?query=workflow%3ABuild)
