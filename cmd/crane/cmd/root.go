@@ -88,6 +88,7 @@ func New(use, short string, options []crane.Option) *cobra.Command {
 
 	commands := []*cobra.Command{
 		NewCmdInitRefIndex(&options),
+		NewCmdAttachCatImage(&options),
 		NewCmdAppend(&options),
 		NewCmdBlob(&options),
 		NewCmdAuth("crane", "auth"),

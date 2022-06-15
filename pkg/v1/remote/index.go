@@ -33,12 +33,6 @@ var acceptableIndexMediaTypes = []types.MediaType{
 	types.OCIImageIndex,
 }
 
-const (
-	referenceTypeAnnotationKey = "org.opencontainers.reference.type"
-	nestedIndexReferenceType   = "nested-index"
-	platformImageReferenceType = "platform-image"
-)
-
 // remoteIndex accesses an index from a remote registry
 type remoteIndex struct {
 	fetcher
@@ -139,9 +133,6 @@ func (r *remoteIndex) RefImageIndex() (v1.ImageIndex, error) {
 			MediaType: r.descriptor.MediaType,
 			Digest:    r.descriptor.Digest,
 			Size:      r.descriptor.Size,
-			Annotations: map[string]string{
-				referenceTypeAnnotationKey: nestedIndexReferenceType, // <-- Reference "type"
-			},
 		},
 	})
 	manifestList, err := r.IndexManifest()
@@ -149,12 +140,6 @@ func (r *remoteIndex) RefImageIndex() (v1.ImageIndex, error) {
 		return nil, err
 	}
 	for _, manifest := range manifestList.Manifests {
-		if manifest.Platform != nil && (manifest.Platform.OS != "" || manifest.Platform.Architecture != "" || manifest.Platform.Variant != "") {
-			if manifest.Annotations == nil {
-				manifest.Annotations = map[string]string{}
-			}
-			manifest.Annotations[referenceTypeAnnotationKey] = platformImageReferenceType // <-- Reference "type"
-		}
 		refIndex = mutate.AppendManifests(refIndex, mutate.IndexAddendum{
 			Add:        empty.Image,
 			Descriptor: manifest,

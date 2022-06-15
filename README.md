@@ -19,30 +19,18 @@ Inspect the original index:
 cmd/crane/crane manifest localhost:5000/alpine:v1 | jq
 ```
 
-Initialize/push the reference index:
-
+Attach cat images:
 ```
-cmd/crane/crane init-ref-index localhost:5000/alpine:v1
-```
-
-Inspect the reference index:
-```
-REF="localhost:5000/alpine:$(cmd/crane/crane digest localhost:5000/alpine:v1 | sed 's|:|-|')"
-echo "Ref-index: ${REF}"
-
-cmd/crane/crane manifest "${REF}" | jq
+cmd/crane/crane attach-cat-image cat1.png localhost:5000/alpine:v1
 ```
 
-Re-tag original location pointing to new index:
 ```
-REF="localhost:5000/alpine:$(cmd/crane/crane digest localhost:5000/alpine:v1 | sed 's|:|-|')"
-cmd/crane/crane copy "${REF}" localhost:5000/alpine:v1
+cmd/crane/crane attach-cat-image cat2.png localhost:5000/alpine:v1
+```
 
-# See new manifest
+Inspect the new index with nested index (first layer) and 2 attachments:
+```
 cmd/crane/crane manifest localhost:5000/alpine:v1 | jq
-
-# Try "init-ref-index" again, it should say "Skipping"
-cmd/crane/crane init-ref-index localhost:5000/alpine:v1
 ```
 
 
