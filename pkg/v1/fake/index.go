@@ -2,6 +2,7 @@
 package fake
 
 import (
+	"fmt"
 	"sync"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -236,6 +237,11 @@ func (fake *FakeImageIndex) ImageIndex(arg1 v1.Hash) (v1.ImageIndex, error) {
 		return ret.result1, ret.result2
 	}
 	return fakeReturns.result1, fakeReturns.result2
+}
+
+
+func (fake *FakeImageIndex) RefImageIndex() (v1.ImageIndex, error) {
+	return nil, fmt.Errorf("not yet implemented")
 }
 
 func (fake *FakeImageIndex) ImageIndexCallCount() int {

@@ -122,6 +122,10 @@ func (i *layoutIndex) ImageIndex(h v1.Hash) (v1.ImageIndex, error) {
 	}, nil
 }
 
+func (i *layoutIndex) RefImageIndex() (v1.ImageIndex, error) {
+	return nil, fmt.Errorf("not yet implemented")
+}
+
 func (i *layoutIndex) Blob(h v1.Hash) (io.ReadCloser, error) {
 	return i.path.Blob(h)
 }

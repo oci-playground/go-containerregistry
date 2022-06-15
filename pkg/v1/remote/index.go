@@ -22,6 +22,8 @@ import (
 	"github.com/google/go-containerregistry/internal/verify"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/empty"
+	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 )
@@ -30,6 +32,12 @@ var acceptableIndexMediaTypes = []types.MediaType{
 	types.DockerManifestList,
 	types.OCIImageIndex,
 }
+
+const (
+	referenceTypeAnnotationKey = "org.opencontainers.reference.type"
+	nestedIndexReferenceType   = "nested-index"
+	platformImageReferenceType = "platform-image"
+)
 
 // remoteIndex accesses an index from a remote registry
 type remoteIndex struct {
@@ -121,6 +129,38 @@ func (r *remoteIndex) ImageIndex(h v1.Hash) (v1.ImageIndex, error) {
 		return nil, err
 	}
 	return desc.ImageIndex()
+}
+
+func (r *remoteIndex) RefImageIndex() (v1.ImageIndex, error) {
+	refIndex := mutate.IndexMediaType(empty.Index, types.OCIImageIndex)
+	refIndex = mutate.AppendManifests(refIndex, mutate.IndexAddendum{
+		Add: empty.Image,
+		Descriptor: v1.Descriptor{
+			MediaType: r.descriptor.MediaType,
+			Digest:    r.descriptor.Digest,
+			Size:      r.descriptor.Size,
+			Annotations: map[string]string{
+				referenceTypeAnnotationKey: nestedIndexReferenceType, // <-- Reference "type"
+			},
+		},
+	})
+	manifestList, err := r.IndexManifest()
+	if err != nil {
+		return nil, err
+	}
+	for _, manifest := range manifestList.Manifests {
+		if manifest.Platform != nil && (manifest.Platform.OS != "" || manifest.Platform.Architecture != "" || manifest.Platform.Variant != "") {
+			if manifest.Annotations == nil {
+				manifest.Annotations = map[string]string{}
+			}
+			manifest.Annotations[referenceTypeAnnotationKey] = platformImageReferenceType // <-- Reference "type"
+		}
+		refIndex = mutate.AppendManifests(refIndex, mutate.IndexAddendum{
+			Add:        empty.Image,
+			Descriptor: manifest,
+		})
+	}
+	return refIndex, nil
 }
 
 // Workaround for #819.

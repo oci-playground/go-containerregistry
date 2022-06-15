@@ -162,6 +162,10 @@ func (i *index) ImageIndex(h v1.Hash) (v1.ImageIndex, error) {
 	return i.base.ImageIndex(h)
 }
 
+func (i *index) RefImageIndex() (v1.ImageIndex, error) {
+	return nil, fmt.Errorf("not yet implemented")
+}
+
 type withLayer interface {
 	Layer(v1.Hash) (v1.Layer, error)
 }

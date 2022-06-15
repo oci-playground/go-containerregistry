@@ -192,3 +192,11 @@ func (ii *imageIndex) ImageIndex(h v1.Hash) (v1.ImageIndex, error) {
 	}
 	return ImageIndex(idx, ii.c), nil
 }
+
+func (ii *imageIndex) RefImageIndex() (v1.ImageIndex, error) {
+	idx, err := ii.inner.RefImageIndex()
+	if err != nil {
+		return nil, err
+	}
+	return ImageIndex(idx, ii.c), nil
+}

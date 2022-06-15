@@ -109,3 +109,7 @@ func (i *randomIndex) ImageIndex(h v1.Hash) (v1.ImageIndex, error) {
 	// This is a single level index (for now?).
 	return nil, fmt.Errorf("image not found: %v", h)
 }
+
+func (i *randomIndex) RefImageIndex() (v1.ImageIndex, error) {
+	return nil, fmt.Errorf("not yet implemented")
+}

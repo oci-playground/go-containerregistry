@@ -40,4 +40,7 @@ type ImageIndex interface {
 
 	// ImageIndex returns a v1.ImageIndex that this ImageIndex references.
 	ImageIndex(Hash) (ImageIndex, error)
+
+	// RefImageIndex gets the once-nested reference index
+	RefImageIndex() (ImageIndex, error)
 }

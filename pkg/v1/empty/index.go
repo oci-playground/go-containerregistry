@@ -56,6 +56,10 @@ func (i emptyIndex) ImageIndex(v1.Hash) (v1.ImageIndex, error) {
 	return nil, errors.New("empty index")
 }
 
+func (i emptyIndex) RefImageIndex() (v1.ImageIndex, error) {
+	return nil, errors.New("empty index")
+}
+
 func base() *v1.IndexManifest {
 	return &v1.IndexManifest{
 		SchemaVersion: 2,
