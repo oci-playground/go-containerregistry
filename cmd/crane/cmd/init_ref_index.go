@@ -21,13 +21,14 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
-// NewCmdCreateRefIndex creates a new cobra.Command for the attach subcommand.
-func NewCmdCreateRefIndex(options *[]crane.Option) *cobra.Command {
+// NewCmdInitRefIndex creates a new cobra.Command for the attach subcommand.
+func NewCmdInitRefIndex(options *[]crane.Option) *cobra.Command {
 	return &cobra.Command{
-		Use:   "create-ref-index",
+		Use:   "init-ref-index",
 		Short: "TODO",
 		Long:  "TODO",
 		Args:  cobra.ExactArgs(1),
@@ -35,24 +36,41 @@ func NewCmdCreateRefIndex(options *[]crane.Option) *cobra.Command {
 			src := args[0]
 			ref, err := name.ParseReference(src)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "name.ParseReference()")
 			}
-			remoteOpts := []remote.Option{
-				remote.WithAuthFromKeychain(authn.DefaultKeychain),
-			}
+			remoteOpts := []remote.Option{remote.WithAuthFromKeychain(authn.DefaultKeychain)}
 			index, err := remote.Index(ref, remoteOpts...)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "remote.Index()")
+			}
+			indexManifest, err := index.IndexManifest()
+			if err != nil {
+				return errors.Wrap(err, "index.IndexManifest()")
+			}
+			if len(indexManifest.Manifests) > 0 {
+				if indexManifest.Manifests[0].MediaType.IsIndex() {
+					fmt.Println("Note: Image is already a reference index. Skipping.")
+					return nil
+				}
 			}
 			refIndex, err := index.RefImageIndex()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "index.RefImageIndex()")
 			}
-			raw, err := refIndex.RawManifest()
+			refDigest, err := index.Digest()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "index.Digest()")
 			}
-			fmt.Println(string(raw))
+			// TODO: when to push "fallback" tag vs. back to original tag
+			target := fmt.Sprintf("%s:%s-%s", ref.Context().Name(), refDigest.Algorithm, refDigest.Hex)
+			targetRef, err := name.ParseReference(target)
+			if err != nil {
+				return errors.Wrap(err, "name.ParseReference()")
+			}
+			err = remote.WriteIndex(targetRef, refIndex, remoteOpts...)
+			if err != nil {
+				return errors.Wrap(err, "remote.Write()")
+			}
 			return nil
 		},
 	}
